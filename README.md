@@ -1,1 +1,1 @@
-# Backend Challenges Boilerplate - Basic Express
+# API for GuitarStore.js
