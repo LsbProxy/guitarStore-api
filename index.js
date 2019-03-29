@@ -1,7 +1,8 @@
-const express = require('express');
-const app = express();
-const bodyParser = require('body-parser');
-const port = process.env.PORT || 3000;
+var express = require('express');
+var app = express();
+var bodyParser = require('body-parser');
+var port = process.env.PORT || 3000;
+var cors = require('cors');
 
 app.listen(port, function(){
   console.log('Node is listening on port '+ port + '...')
@@ -14,8 +15,10 @@ app.use(function middleware(req, res, next) {
 
 app.use(bodyParser.urlencoded({extended: false}));
 
+app.use(cors());
 
-const guitars = {
+
+var guitars = {
 		'Electric Guitars': {
 			'Single Cut': [
 				['Gibson 1959 Les Paul Cherry Sunburst Light Aged', 'https://images.musicstore.de/images/0640/gibson-1959-les-paul-historic-select-heritage-cherry-sunburst-light-aged-hs9-50022_1_GIT0043447-000.jpg', '€ 4,800'],
@@ -112,22 +115,22 @@ const guitars = {
 // localhost:3000/api?searchQuery=gibson&page=1&rpp=10&sort=name
 
 app.get('/api', (req, res) => {
-	let searchQuery = req.query.searchQuery;
-	let page = req.query.page;
-	let rpp = req.query.rpp;
-	let sort = req.query.sort;
-	let itemsArr = [];
-	let items = itemsArr;
+	var searchQuery = req.query.searchQuery;
+	var page = req.query.page;
+	var rpp = req.query.rpp;
+	var sort = req.query.sort;
+	var itemsArr = [];
+	var items = itemsArr;
 
 	(() => {
-		let matchedFilter = new RegExp(searchQuery, "i");		
+		var matchedFilter = new RegExp(searchQuery, "i");		
 
-		let singleCut = guitars['Electric Guitars']['Single Cut'].filter(item => matchedFilter.test(item));
-		let tModels = guitars['Electric Guitars']['T Models'].filter(item => matchedFilter.test(item));
-		let stModels = guitars['Electric Guitars']['ST Models'].filter(item => matchedFilter.test(item));	
-		let dreadnought = guitars['Acoustic Guitars']['Dreadnought'].filter(item => matchedFilter.test(item));
-		let otherShapes = guitars['Acoustic Guitars']['Other Shapes'].filter(item => matchedFilter.test(item));
-		let classical = guitars['Classical Guitars'].filter(item => matchedFilter.test(item));	
+		var singleCut = guitars['Electric Guitars']['Single Cut'].filter(item => matchedFilter.test(item));
+		var tModels = guitars['Electric Guitars']['T Models'].filter(item => matchedFilter.test(item));
+		var stModels = guitars['Electric Guitars']['ST Models'].filter(item => matchedFilter.test(item));	
+		var dreadnought = guitars['Acoustic Guitars']['Dreadnought'].filter(item => matchedFilter.test(item));
+		var otherShapes = guitars['Acoustic Guitars']['Other Shapes'].filter(item => matchedFilter.test(item));
+		var classical = guitars['Classical Guitars'].filter(item => matchedFilter.test(item));	
 
 		return itemsArr.push(singleCut, tModels, stModels, dreadnought, otherShapes, classical);		
 	})();	
