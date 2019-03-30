@@ -1,8 +1,9 @@
 var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
-var port = process.env.PORT || 3000;
+const port = process.env.PORT || 3000;
 var cors = require('cors');
+var flatten = require('lodash/flatten');
 
 app.listen(port, function(){
   console.log('Node is listening on port '+ port + '...')
@@ -18,7 +19,7 @@ app.use(bodyParser.urlencoded({extended: false}));
 app.use(cors());
 
 
-var guitars = {
+const guitars = {
 		'Electric Guitars': {
 			'Single Cut': [
 				['Gibson 1959 Les Paul Cherry Sunburst Light Aged', 'https://images.musicstore.de/images/0640/gibson-1959-les-paul-historic-select-heritage-cherry-sunburst-light-aged-hs9-50022_1_GIT0043447-000.jpg', '€ 4,800'],
@@ -101,46 +102,86 @@ var guitars = {
 				['Epiphone Masterbilt Century De Luxe Classic Vintage Natural', 'https://images.musicstore.de/images/0320/epiphone-masterbilt-century-de-luxe-classic-vintage-natural_1_GIT0038925-000.jpg', '€ 545.38'],
 			].sort(),
 		},
-		'Classical Guitars': [
-			['Ortega R122 1/4 Cedar Natural', 'https://images.musicstore.de/images/0640/ortega-r122-1-4-cedar-natural-_1_GIT0034291-000.jpg', '€ 130.30'],
-			['Ortega R121 1/4 WH White, incl. Bag', 'https://images.musicstore.de/images/0640/ortega-r121-1-4-wh-white-incl-bag_1_GIT0015219-000.jpg', '€ 141.20'],
-			['Ortega R121 1/4 WR Wine Red', 'https://images.musicstore.de/images/0640/ortega-r121-1-4-wr-wine-red-_1_GIT0034284-000.jpg', '€ 137.80'],
-			['Ortega R121-1/4 Natural Satin, incl. Gigbag', 'https://images.musicstore.de/images/0640/ortega-r121-1-4-natural-satin-incl-gigbag_1_GIT0018904-000.jpg', '€ 132.80'],
-			['Jack & Danny CG-1 1/4 NT Natural', 'https://images.musicstore.de/images/0640/jack-und-danny-cg-1-1-4-nt-natural_1_GIT0030779-000.jpg', '€ 41.20'],
-		].sort(),
+		'Classical Guitars': {
+			'Classical Guitars': [
+				['Ortega R122 1/4 Cedar Natural', 'https://images.musicstore.de/images/0640/ortega-r122-1-4-cedar-natural-_1_GIT0034291-000.jpg', '€ 130.30'],
+				['Ortega R121 1/4 WH White, incl. Bag', 'https://images.musicstore.de/images/0640/ortega-r121-1-4-wh-white-incl-bag_1_GIT0015219-000.jpg', '€ 141.20'],
+				['Ortega R121 1/4 WR Wine Red', 'https://images.musicstore.de/images/0640/ortega-r121-1-4-wr-wine-red-_1_GIT0034284-000.jpg', '€ 137.80'],
+				['Ortega R121-1/4 Natural Satin, incl. Gigbag', 'https://images.musicstore.de/images/0640/ortega-r121-1-4-natural-satin-incl-gigbag_1_GIT0018904-000.jpg', '€ 132.80'],
+				['Jack & Danny CG-1 1/4 NT Natural', 'https://images.musicstore.de/images/0640/jack-und-danny-cg-1-1-4-nt-natural_1_GIT0030779-000.jpg', '€ 41.20'],
+			].sort(),
+	    }
 };
 
-// Get input from client - Route parameters
+// SearchResults
 
-// localhost:3000/api?searchQuery=gibson&page=1&rpp=10&sort=name
+// /api/search?searchQuery=gibson&page=1&rpp=10&sort=name
 
-app.get('/api', (req, res) => {
-	var searchQuery = req.query.searchQuery;
-	var page = req.query.page;
-	var rpp = req.query.rpp;
-	var sort = req.query.sort;
-	var itemsArr = [];
-	var items = itemsArr;
+app.get('/api/search', (req, res) => {
+  
+	let searchQuery = req.query.searchQuery;
+	let page = req.query.page || 1;
+	let rpp = req.query.rpp || 10;
+	let sort = req.query.sort || 'name';  
+	let indexOfLastItem = page * rpp;
+	let indexOfFirstItem = indexOfLastItem - rpp;
 
-	(() => {
-		var matchedFilter = new RegExp(searchQuery, "i");		
+	let matchedFilter = new RegExp(searchQuery, "i");		
 
-		var singleCut = guitars['Electric Guitars']['Single Cut'].filter(item => matchedFilter.test(item));
-		var tModels = guitars['Electric Guitars']['T Models'].filter(item => matchedFilter.test(item));
-		var stModels = guitars['Electric Guitars']['ST Models'].filter(item => matchedFilter.test(item));	
-		var dreadnought = guitars['Acoustic Guitars']['Dreadnought'].filter(item => matchedFilter.test(item));
-		var otherShapes = guitars['Acoustic Guitars']['Other Shapes'].filter(item => matchedFilter.test(item));
-		var classical = guitars['Classical Guitars'].filter(item => matchedFilter.test(item));	
+	let singleCut = guitars['Electric Guitars']['Single Cut'].filter(item => matchedFilter.test(item));
+	let tModels = guitars['Electric Guitars']['T Models'].filter(item => matchedFilter.test(item));
+	let stModels = guitars['Electric Guitars']['ST Models'].filter(item => matchedFilter.test(item));	
+	let dreadnought = guitars['Acoustic Guitars']['Dreadnought'].filter(item => matchedFilter.test(item));
+	let otherShapes = guitars['Acoustic Guitars']['Other Shapes'].filter(item => matchedFilter.test(item));
+	let classical = guitars['Classical Guitars']['Classical Guitars'].filter(item => matchedFilter.test(item));	
 
-		return itemsArr.push(singleCut, tModels, stModels, dreadnought, otherShapes, classical);		
-	})();	
+	let items = flatten([singleCut, tModels, stModels, dreadnought, otherShapes, classical]);
+
+	let currentItems = items.slice(indexOfFirstItem, indexOfLastItem);
+
+	let pageNumbers = [];
+
+	for (let i = 1; i <= Math.ceil(items.length / rpp); i++) {
+		pageNumbers.push(i);
+	}  
 
 	res.status(200).json({ 
-		searchQuery: searchQuery,
+		searchQuery: searchQuery || null,
 		page:  page,
 		rpp: rpp,
+    	pageNum: searchQuery === "" ? null : pageNumbers,
 		sort: sort,
-		items: items,		
+		items: searchQuery === "" ? null : currentItems,		
+	});
+});
+
+// GET List items
+
+// /api/Electric Guitars/Single Cut?page=1&rpp=10
+
+app.get('/api/:type/:model', (req, res) => {
+  
+	let type = req.params.type;
+	let model = req.params.model;
+	let page = req.query.page || 1;
+	let rpp = req.query.rpp || 10;
+	let items = [];				 
+
+	let indexOfLastItem = page * rpp;
+	let indexOfFirstItem = indexOfLastItem - rpp;
+	let currentItems = guitars[type][model].slice(indexOfFirstItem, indexOfLastItem);
+
+	let pageNumbers = [];
+
+	for (let i = 1; i <= Math.ceil(guitars[type][model].length / rpp); i++) {
+		pageNumbers.push(i);
+	} 
+  
+	res.status(200).json({
+		page:  page,
+		rpp: rpp,
+    	pageNum: pageNumbers,
+		items: currentItems,		
 	});
 });
 
