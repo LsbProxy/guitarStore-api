@@ -151,7 +151,7 @@ app.get('/api/search', (req, res) => {
 		rpp: rpp,
     	pageNum: searchQuery === "" ? null : pageNumbers,
 		sort: sort,
-		items: searchQuery === "" ? null : currentItems,		
+		items: searchQuery === "" ? [] : currentItems,	
 	});
 });
 
